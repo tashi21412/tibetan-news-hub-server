@@ -87,33 +87,6 @@ async function scrapeRFA() {
 }
 
 /* ---------------------------------------------------
-   📰 VOA Tibetan
------------------------------------------------------ */
-async function scrapeVOA() {
-  try {
-    const feed = await parser.parseURL("https://www.voatibetan.com/rss?tab=all");
-    const items = feed.items.map(item => ({
-      id: `voa-${Buffer.from(item.link).toString("base64")}`,
-      title: item.title,
-      excerpt: item.contentSnippet || "",
-      image_url: extractImage(item.content),
-      source: "VOA Tibetan",
-      source_url: item.link,
-      category: "tibet",
-      region: "global",
-      published_at: item.pubDate || null,
-      scraped_at: new Date().toISOString(),
-      language: detectLanguage(item.title),
-    }));
-    console.log("VOA scraped:", items.length);
-    return items;
-  } catch (err) {
-    console.error("VOA RSS error:", err.message);
-    return [];
-  }
-}
-
-/* ---------------------------------------------------
    📰 CTA – Tibet.net
 ----------------------------------------------------- */
 async function scrapeCTA() {
@@ -223,31 +196,6 @@ async function scrapeTibetanReview() {
   }
 }
 
-/* Dalai Lama Office */
-async function scrapeDalaiLama() {
-  try {
-    const feed = await parser.parseURL("https://www.dalailama.com/news/rss");
-    const items = feed.items.map(item => ({
-      id: `dl-${Buffer.from(item.link).toString("base64")}`,
-      title: item.title,
-      excerpt: item.contentSnippet || "",
-      image_url: extractImage(item.content),
-      source: "Dalai Lama Office",
-      source_url: item.link,
-      category: "spiritual",
-      region: "tibet",
-      published_at: item.pubDate || null,
-      scraped_at: new Date().toISOString(),
-      language: detectLanguage(item.title),
-    }));
-    console.log("Dalai Lama scraped:", items.length);
-    return items;
-  } catch (err) {
-    console.error("Dalai Lama RSS error:", err.message);
-    return [];
-  }
-}
-
 /* High Peaks Pure Earth */
 async function scrapeHighPeaks() {
   try {
@@ -299,6 +247,35 @@ async function scrapeTibetExpress() {
 }
 
 /* ---------------------------------------------------
+   📰 Students for a Free Tibet — RSS SCRAPER
+----------------------------------------------------- */
+async function scrapeSFT() {
+  try {
+    const feed = await parser.parseURL("https://studentsforafreetibet.org/feed");
+    const items = feed.items.map(item => ({
+      id: `sft-${Buffer.from(item.link).toString("base64")}`,
+      title: item.title || "Untitled",
+      excerpt: item.contentSnippet || "",
+      image_url: extractImage(item.content),
+      source: "Students for a Free Tibet",
+      source_url: item.link,
+      category: "activism",
+      region: "global",
+      published_at: item.pubDate || null,
+      scraped_at: new Date().toISOString(),
+      language: detectLanguage(item.title),
+    }));
+
+    console.log("SFT scraped:", items.length);
+    return items;
+  } catch (err) {
+    console.error("SFT RSS error:", err.message);
+    return [];
+  }
+}
+
+
+/* ---------------------------------------------------
    MASTER SCRAPER — Combine all sources
 ----------------------------------------------------- */
 async function scrapeAllSources() {
@@ -308,27 +285,26 @@ async function scrapeAllSources() {
 
   const phayul = await scrapePhayul();
   const rfa = await scrapeRFA();
-  const voa = await scrapeVOA();
   const cta = await scrapeCTA();
   const tibetsun = await scrapeTibetSun();
+  const sft = await scrapeSFT();
+
 
   const tpi = await scrapeTPI();
   const tibrev = await scrapeTibetanReview();
-  const dalai = await scrapeDalaiLama();
   const highpeaks = await scrapeHighPeaks();
   const tibetexpress = await scrapeTibetExpress();
 
   results.push(
     ...phayul,
     ...rfa,
-    ...voa,
     ...cta,
     ...tibetsun,
     ...tpi,
     ...tibrev,
-    ...dalai,
     ...highpeaks,
-    ...tibetexpress
+    ...tibetexpress,
+    ...sft
   );
 
   // Deduplicate by URL
